@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>激ダサホームページメーカー</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'MS PGothic', 'Osaka', sans-serif; /* 基本フォントもダサめに */
+        }
+        /* 点滅アニメーション */
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+        .ugly-blink {
+            animation: blink 1s linear infinite;
+        }
+
+        /* スクロール（マーキー）アニメーション */
+        .ugly-marquee-container {
+            width: 100%;
+            overflow: hidden;
+            padding: 5px 0;
+            margin: 10px 0;
+        }
+        .ugly-marquee-text {
+            display: inline-block;
+            padding-left: 100%;
+            animation: marquee-scroll 15s linear infinite;
+            white-space: nowrap;
+        }
+        @keyframes marquee-scroll {
+            0%   { transform: translateX(0); }
+            100% { transform: translateX(-250%); } /* テキストが長くなることを想定 */
+        }
+
+        /* 虹色テキスト */
+        .ugly-rainbow-text {
+            background-image: linear-gradient(to left, violet, indigo, blue, green, yellow, orange, red);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            font-weight: bold;
+        }
+
+        /* ダサいモーダル */
+        .ugly-modal {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            padding: 20px;
+            border: 5px dotted yellow;
+            z-index: 1000;
+            text-align: center;
+            box-shadow: 10px 10px 5px #888888;
+            display: none; /* 初期状態は非表示 */
+        }
+        .ugly-modal h3 {
+            font-size: 2em;
+            margin-bottom: 15px;
+        }
+        .ugly-modal p {
+            margin-bottom: 15px;
+        }
+        .ugly-modal button {
+            padding: 10px 20px;
+            border: 3px outset #ccc;
+            cursor: pointer;
+        }
+        #outputArea {
+            border: 5px ridge #FF00FF; /* どぎついボーダー */
+            padding: 15px;
+            margin-top: 20px;
+            min-height: 300px;
+            background-color: #E0E0E0; /* やや暗めの背景 */
+            overflow-wrap: break-word;
+            word-wrap: break-word;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 p-4 md:p-8">
+    <div class="container mx-auto max-w-4xl bg-white shadow-lg rounded-lg p-6">
+        <header class="text-center mb-8">
+            <h1 class="text-4xl font-bold text-purple-700" style="font-family: 'Impact', sans-serif;">
+                <span class="ugly-rainbow-text">激ダサ</span>ホームページメーカー
+            </h1>
+            <h2>Provided by So Miyagawa <a href="https://somiyagawa.com/" target="_blank">(website)</a></h2>
+            <p class="text-gray-600 mt-2">あなたのホームページを、愛すべき「ダサさ」で彩ります！</p>
+        </header>
+
+        <div class="input-section mb-6">
+            <div class="mb-4">
+                <label for="pageTitle" class="block text-lg font-medium text-gray-700 mb-1">ホームページのタイトル<span class="text-red-500">*</span></label>
+                <input type="text" id="pageTitle" class="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" placeholder="例：山田太郎の秘密基地">
+            </div>
+            <div class="mb-4">
+                <label for="pageContent" class="block text-lg font-medium text-gray-700 mb-1">ホームページの内容<span class="text-red-500">*</span></label>
+                <textarea id="pageContent" rows="8" class="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" placeholder="例：ここは私の趣味や日常を記録するページです。ゆっくりしていってね！！！"></textarea>
+            </div>
+            <button id="generateButton" class="w-full bg-gradient-to-r from-pink-500 to-yellow-500 hover:from-pink-600 hover:to-yellow-600 text-white font-bold py-3 px-6 rounded-lg text-xl shadow-md transform hover:scale-105 transition-transform duration-150">
+                <span style="font-family: 'Comic Sans MS', cursive;">▼</span> 激ダササイトを生成！ <span style="font-family: 'Comic Sans MS', cursive;">▼</span>
+            </button>
+        </div>
+
+        <hr class="my-8 border-gray-300">
+
+        <h2 class="text-2xl font-semibold text-center text-gray-800 mb-4">生成結果プレビュー</h2>
+        <div id="outputArea" class="bg-white p-4 rounded-md shadow">
+            <p class="text-gray-500">ここに生成されたホームページが表示されます。</p>
+        </div>
+    </div>
+
+    <div id="uglyModal" class="ugly-modal">
+        <h3 id="modalTitle">タイトル</h3>
+        <p id="modalMessage">メッセージ</p>
+        <img id="modalGif" src="" alt="GIF" style="width:100px; height:100px; margin: 0 auto 15px auto;">
+        <button id="closeModalButton">閉じるのだ！</button>
+    </div>
+
+    <script>
+        // Helper functions
+        const getRandomElement = (arr) => arr[Math.floor(Math.random() * arr.length)];
+        const getRandomInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
+
+        // ダサい要素のリスト
+        const garishColorPairs = [
+            { bg: 'red', text: 'lime' }, { bg: 'blue', text: 'yellow' },
+            { bg: 'yellow', text: 'fuchsia' }, { bg: 'lime', text: 'red' },
+            { bg: 'cyan', text: 'magenta' }, { bg: 'magenta', text: 'yellow' },
+            { bg: 'black', text: 'lime' }, { bg: 'white', text: 'blue' },
+            { bg: '#FF00FF', text: '#00FF00'}, {bg: '#00FFFF', text: '#FF0000'}
+        ];
+        const badFonts = ['Comic Sans MS', 'Papyrus', 'Impact', 'Times New Roman', 'Courier New', 'Arial Black', 'MS Mincho', 'MS Gothic', 'Verdana', 'Brush Script MT'];
+        const annotations = [
+            "※個人の感想です。", "※これはフィクションです。", "※効果には個人差があります。",
+            "※イメージです。", "※当社比100倍（適当）", "（笑）", "www", "（爆）",
+            "※念のため言っておきますが…", "※あくまで個人の見解であり、所属する組織の公式見解ではありません。"
+        ];
+        const verboseLeadIns = [
+            "さて、ここで注目すべきは… ", "つまり、要するに… ", "言い換えるとですね… ",
+            "刮目せよ！ ", "驚くことなかれ！ ", "声を大にして言いたいのは… "
+        ];
+        const verboseTrailOuts = [
+            "…ということですな。", "…ご理解いただけましたでしょうか？", "…なのであります！",
+            "…と、まあそういうわけです。", "…お分かり？"
+        ];
+        const titlePrefixes = ["【緊急速報】", "★激安★", "≪必見≫", "☆衝撃の事実☆", "【号外】", "◆◇◆"];
+        const titleSuffixes = ["！！！１１", "ｗｗｗ", "（秘）", "DX", "2025", "RETURNS"];
+        const classicGifs = [
+            "https://placehold.co/50x50/FFFF00/000000/?text=NEW!",
+            "https://placehold.co/80x31/0000FF/FFFFFF/?text=工事中",
+            "https://placehold.co/30x30/FF0000/FFFFFF/?text=★",
+            "https://placehold.co/100x50/00FF00/000000/?text=MAIL"
+        ];
+        const placeholderImages = [
+            "https://placehold.co/100x100/FF00FF/00FFFF/?text=謎画像1",
+            "https://placehold.co/150x80/00FF00/FF0000/?text=謎画像2",
+            "https://placehold.co/80x120/FFFF00/0000FF/?text=謎画像3"
+        ];
+
+        // ダサいスタイルの生成
+        function getRandomUglyStyle(isTextHeavy = false) {
+            let style = `font-family: ${getRandomElement(badFonts)}; `;
+            style += `font-size: ${getRandomInt(8, 32)}pt; `; // フォントサイズをpt指定で
+            const colors = getRandomElement(garishColorPairs);
+            style += `color: ${colors.text}; `;
+            if (!isTextHeavy || Math.random() < 0.3) { // テキストが多い要素では背景色をつけすぎないように調整
+                 style += `background-color: ${colors.bg}; `;
+            }
+            if (Math.random() < 0.2) style += 'font-weight: bold; ';
+            if (Math.random() < 0.1) style += 'font-style: italic; ';
+            if (Math.random() < 0.1) style += 'text-decoration: underline; ';
+            if (Math.random() < 0.05) style += 'text-decoration: underline overline line-through; '; // やりすぎ装飾
+            return style;
+        }
+
+        function makeBlinking(text, customStyle = "") {
+            return `<span class="ugly-blink" style="${customStyle || getRandomUglyStyle()}">${text}</span>`;
+        }
+
+        function makeMarquee(text, bgColor = 'gray', textColor = 'white') {
+            return `
+                <div class="ugly-marquee-container" style="background-color: ${bgColor}; border: 2px dashed ${textColor};">
+                    <p class="ugly-marquee-text" style="color: ${textColor}; font-size: ${getRandomInt(12,24)}pt; font-family: ${getRandomElement(badFonts)};">
+                        ${text}
+                    </p>
+                </div>`;
+        }
+        
+        function makeRainbowText(text) {
+            return `<span class="ugly-rainbow-text" style="font-size: ${getRandomInt(20,40)}pt; font-family: ${getRandomElement(badFonts)};">${text}</span>`;
+        }
+
+        // ダサいモーダル表示
+        function showUglyModal(title, message, gifSrc) {
+            document.getElementById('modalTitle').textContent = title;
+            document.getElementById('modalTitle').style = getRandomUglyStyle();
+            document.getElementById('modalMessage').textContent = message;
+            document.getElementById('modalMessage').style = getRandomUglyStyle();
+            document.getElementById('modalGif').src = gifSrc;
+            const modal = document.getElementById('uglyModal');
+            const modalColors = getRandomElement(garishColorPairs);
+            modal.style.backgroundColor = modalColors.bg;
+            modal.style.color = modalColors.text;
+            modal.style.fontFamily = getRandomElement(badFonts);
+            modal.style.display = 'block';
+            
+            const closeButton = document.getElementById('closeModalButton');
+            const buttonColors = getRandomElement(garishColorPairs);
+            closeButton.style.backgroundColor = buttonColors.bg;
+            closeButton.style.color = buttonColors.text;
+            closeButton.style.fontFamily = getRandomElement(badFonts);
+            closeButton.style.fontSize = `${getRandomInt(10,18)}pt`;
+        }
+
+        document.getElementById('closeModalButton').addEventListener('click', () => {
+            document.getElementById('uglyModal').style.display = 'none';
+        });
+
+        // メインの生成関数
+        document.getElementById('generateButton').addEventListener('click', () => {
+            const userTitle = document.getElementById('pageTitle').value || "無題のスーパースター";
+            const userContent = document.getElementById('pageContent').value || "ここに何かすごいことが書いてあったはずなんだ…思い出せないけど。";
+            const outputArea = document.getElementById('outputArea');
+
+            // ダサいモーダルをまず表示
+            showUglyModal(
+                getRandomElement(["警告！", "注目！", "見て！"]),
+                "超クールな（？）ページが生成されたぞ！心して見るように！",
+                getRandomElement(classicGifs)
+            );
+
+            let html = '';
+
+            // 0. 全体的なスタイルとカオスな背景
+            const bodyColors = getRandomElement(garishColorPairs);
+            html += `<div style="background-color: ${bodyColors.bg}; color: ${bodyColors.text}; font-family: ${getRandomElement(badFonts)}; padding: 10px; border: 10px groove ${getRandomElement(garishColorPairs).bg};">`;
+            html += `<style> 
+                #generatedContent * { box-sizing: border-box; } /* 崩壊を防ぐため、一応 */
+                #generatedContent table, #generatedContent th, #generatedContent td { border: 1px solid ${getRandomElement(garishColorPairs).text}; border-collapse: collapse; padding: 5px; }
+            </style>`; // 生成コンテンツ内でのテーブルスタイル
+
+            // 1. タイトル部分
+            let siteTitle = userTitle;
+            if (Math.random() < 0.7) siteTitle = getRandomElement(titlePrefixes) + siteTitle;
+            if (Math.random() < 0.7) siteTitle += getRandomElement(titleSuffixes);
+            
+            html += `<center>`; // 古典的中央寄せ
+            if (Math.random() < 0.3) {
+                html += makeMarquee(siteTitle, getRandomElement(garishColorPairs).bg, getRandomElement(garishColorPairs).text);
+            } else if (Math.random() < 0.5) {
+                html += `<h1 style="${getRandomUglyStyle()}">${makeBlinking(siteTitle)}</h1>`;
+            } else {
+                 html += `<h1 style="${getRandomUglyStyle()}">${makeRainbowText(siteTitle)}</h1>`;
+            }
+            html += `<img src="${getRandomElement(classicGifs)}" alt="Cool GIF"> <img src="${getRandomElement(classicGifs)}" alt="Another Cool GIF">`;
+            html += `</center><hr style="border: 3px dashed ${getRandomElement(garishColorPairs).bg}; margin: 15px 0;">`;
+
+
+            // 2. くどい挨拶と導入
+            html += `<p style="${getRandomUglyStyle()}">ようこそ！このページは<strong style="color:red;">${userTitle}</strong>のすべてを語る（かもしれない）究極のページだ！</p>`;
+            html += `<p style="${getRandomUglyStyle()}">${getRandomElement(verboseLeadIns)}このサイトの管理人が丹精込めて（？）作り上げた珠玉のコンテンツをとくとご覧あれ！ ${getRandomElement(verboseTrailOuts)}</p>`;
+            html += `<br><br>`;
+
+            // 3. コンテンツ部分
+            const paragraphs = userContent.split('\n').filter(p => p.trim() !== '');
+            paragraphs.forEach(para => {
+                let processedPara = para;
+                // くどい説明の追加
+                if (Math.random() < 0.5) {
+                    processedPara = `${getRandomElement(verboseLeadIns)} ${processedPara} ${getRandomElement(verboseTrailOuts)}`;
+                }
+                // さらにくどく
+                if (Math.random() < 0.3) {
+                    processedPara = `<strong>重要ポイント：</strong> ${processedPara} <strong style="color: ${getRandomElement(garishColorPairs).text}; background-color: ${getRandomElement(garishColorPairs).bg};">ここ、テストに出ますよ！</strong>`;
+                }
+
+
+                html += `<div style="margin-bottom: 20px; padding:10px; border: 3px dotted ${getRandomElement(garishColorPairs).bg}; ${getRandomUglyStyle(true)}">`;
+                // テキストの一部を点滅させたり虹色にしたり
+                const words = processedPara.split(' ');
+                let styledPara = words.map(word => {
+                    if (Math.random() < 0.05) return makeBlinking(word);
+                    if (Math.random() < 0.02) return makeRainbowText(word);
+                    if (Math.random() < 0.1) return `<strong style="font-size:${getRandomInt(10,30)}pt; color:${getRandomElement(garishColorPairs).text}; background-color:${getRandomElement(garishColorPairs).bg};">${word}</strong>`;
+                    return word;
+                }).join(' ');
+
+                html += `<p>${styledPara}</p>`;
+
+                // 細かい注釈
+                if (Math.random() < 0.6) {
+                    html += `<span style="font-size: ${getRandomInt(5,8)}pt; color: ${getRandomElement(garishColorPairs).text}; background-color: ${getRandomElement(garishColorPairs).bg}; display:block; text-align:right;">${getRandomElement(annotations)}</span>`;
+                }
+                // ランダム画像
+                if (Math.random() < 0.2) {
+                    html += `<center><img src="${getRandomElement(placeholderImages)}" alt="謎の画像" style="border: 5px solid ${getRandomElement(garishColorPairs).bg}; margin-top:10px;"></center>`;
+                }
+                 // テーブルレイアウトの残骸（無理やり）
+                if (Math.random() < 0.15) {
+                    html += `<br><table style="width:80%; margin:10px auto; ${getRandomUglyStyle()}"><tr><th>情報A</th><th>情報B</th></tr><tr><td>${para.substring(0,10)}...</td><td>${getRandomElement(annotations)}</td></tr></table>`;
+                }
+                html += `</div><br>`; // 無駄な改行
+            });
+
+            // 4. さらにくどいまとめ
+            html += `<hr style="border-top: 5px double ${getRandomElement(garishColorPairs).bg};">`;
+            html += `<p style="${getRandomUglyStyle()}">いかがでしたか？この<strong style="font-size:150%">${userTitle}</strong>のページは、あなたの心に何かを残せたでしょうか？</p>`;
+            html += `<p style="font-family: 'MS Mincho', serif; font-size: ${getRandomInt(7,10)}pt; text-align:center;">${getRandomElement(verboseLeadIns)}またのお越しを心よりお待ちしております。 ${getRandomElement(verboseTrailOuts)}</p>`;
+
+            // 5. フッターのダサい要素
+            html += `<hr style="height:10px; background-color: ${getRandomElement(garishColorPairs).bg}; border:none; margin: 20px 0;">`;
+            html += `<div style="text-align: center; ${getRandomUglyStyle()}">`;
+            html += `<p>アクセスカウンター: <img src="https://placehold.co/100x40/${getRandomElement(garishColorPairs).bg.substring(1)}/${getRandomElement(garishColorPairs).text.substring(1)}/?text=${getRandomInt(1000,99999)}" alt="アクセスカウンター"> 人目のお客様です！キリ番踏んだらBBSに報告してね！</p>`;
+            html += `<p><img src="${getRandomElement(classicGifs)}" alt="工事中"> このサイトは Netscape Navigator 4.0 及び Internet Explorer 5.0 で最適に表示されるように作られていませんが、たぶん動きます。</p>`;
+            html += `<p style="font-size: 8pt;">(C) ${new Date().getFullYear()} ${userTitle}のホームページ製作委員会. All rights reserved (maybe).</p>`;
+            html += `<a href="#" style="${getRandomUglyStyle()}">ゲストブック</a> | <a href="#" style="${getRandomUglyStyle()}">リンク集</a> | <a href="#" style="${getRandomUglyStyle()}">管理人にメール（届きません）</a>`;
+            html += `</div>`;
+            
+            html += `</div>`; // 全体divの閉じ
+
+            outputArea.innerHTML = `<div id="generatedContent">${html}</div>`;
+        });
+
+    </script>
+</body>
+</html>
